@@ -16,24 +16,28 @@ export class UserService {
     private readonly userRepository: Repository<UserEntity>,
   ) {}
 
-  async create(user: User) {
-    const { password, username } = user;
-    try {
-      const existingUser = this.findByUsername(username);
-      // if (existingUser) {
-      //   throw new Error('Username already in use');
-      // }
-      const hashedPwd = await bcrypt.hash(password, 10);
-      user.password = hashedPwd;
-      console.log('user is', user);
-      return await this.userRepository.save(user);
-    } catch (error) {
-      // console.log('error', error);
-      // console.log('error.message', error.message);
-      // return res.status(400).json({ error: error.message });
-      throw new Error(error.message);
-    }
+  create(user: User): Observable<User> {
+    return from(this.userRepository.save(user));
   }
+
+  // async create(user: User) {
+  //   const { password, username } = user;
+  //   try {
+  //     const existingUser = this.findByUsername(username);
+  //     // if (existingUser) {
+  //     //   throw new Error('Username already in use');
+  //     // }
+  //     const hashedPwd = await bcrypt.hash(password, 10);
+  //     user.password = hashedPwd;
+  //     console.log('user is', user);
+  //     return await this.userRepository.save(user);
+  //   } catch (error) {
+  //     // console.log('error', error);
+  //     // console.log('error.message', error.message);
+  //     // return res.status(400).json({ error: error.message });
+  //     throw new Error(error.message);
+  //   }
+  // }
 
   findByUsername(username: string): Observable<User> {
     return from(this.userRepository.findOne({ username: username }));
