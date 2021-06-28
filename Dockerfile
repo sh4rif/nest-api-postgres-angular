@@ -13,7 +13,7 @@ RUN npm install
 
 RUN npm run build
 
-EXPOSE 3000
+EXPOSE 4000
 
 ################
 ## PRODUCTION ##
@@ -29,7 +29,7 @@ WORKDIR /api
 
 COPY --from=development /api/ .
 
-EXPOSE 3000
+EXPOSE 4000
 
 # run app
 CMD [ "node", "dist/main"]
