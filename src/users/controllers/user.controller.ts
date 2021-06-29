@@ -1,9 +1,10 @@
 import { Body, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { Controller } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { User } from '../models/user.interface';
 import { UserService } from '../services/user.service';
 import * as express from 'express';
+import { catchError, map } from 'rxjs/operators';
 
 @Controller('users')
 export class UserController {
@@ -15,8 +16,20 @@ export class UserController {
   }
 
   @Post()
-  create(@Body() payload: User): Observable<User> {
-    return this.usrService.create(payload);
+  create(@Body() payload: User): Observable<User | Object> {
+    return this.usrService.create(payload).pipe(
+      map((user: User) => user), 
+      catchError((err)=> {
+        return of({error: err.message})
+      } )
+    )
+  }
+
+  @Post('login')
+  login(@Body() payload: User): Observable<Object>{
+    return this.usrService.login(payload).pipe(map((jwt: string)=> {
+      return {accessToken: jwt}
+    }))
   }
 
   // @Post()
