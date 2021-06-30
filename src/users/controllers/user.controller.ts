@@ -1,10 +1,13 @@
-import { Body, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { Controller } from '@nestjs/common';
 import { Observable, of } from 'rxjs';
-import { User } from '../models/user.interface';
-import { UserService } from '../services/user.service';
-import * as express from 'express';
 import { catchError, map } from 'rxjs/operators';
+
+import { User, UserRole } from '../models/user.interface';
+import { UserService } from '../services/user.service';
+import { hasRoles } from 'src/auth/decorators/roles.decorator';
+import { JwtAuthGuar } from 'src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
 
 @Controller('users')
 export class UserController {
@@ -18,31 +21,22 @@ export class UserController {
   @Post()
   create(@Body() payload: User): Observable<User | Object> {
     return this.usrService.create(payload).pipe(
-      map((user: User) => user), 
-      catchError((err)=> {
-        return of({error: err.message})
-      } )
-    )
+      map((user: User) => user),
+      catchError((err) => {
+        return of({ error: err.message });
+      }),
+    );
   }
 
   @Post('login')
-  login(@Body() payload: User): Observable<Object>{
-    return this.usrService.login(payload).pipe(map((jwt: string)=> {
-      return {accessToken: jwt}
-    }))
+  login(@Body() payload: User): Observable<Object> {
+    return this.usrService.login(payload).pipe(
+      map((jwt: string) => {
+        // console.log('user is', payload)
+        return { accessToken: jwt };
+      }),
+    );
   }
-
-  // @Post()
-  // async create(@Body() payload: User, res: express.Response) {
-  //   // return this.usrService.create(payload);
-  //   try {
-  //     return await this.usrService.create(payload);
-  //   } catch (error) {
-  //     console.log('error', error);
-  //     return res.send(error);
-  //   }
-  //   // return this.usrService.create(payload, res);
-  // }
 
   @Get(':id')
   getById(@Param('id') id: string): Observable<User> {
@@ -57,5 +51,15 @@ export class UserController {
   @Delete(':id')
   delete(@Param('id') id: string): Observable<User> {
     return this.usrService.delete(Number(id));
+  }
+
+  @hasRoles(UserRole.ADMIN)
+  @UseGuards(JwtAuthGuar, RolesGuard)
+  @Put(':id/role')
+  updateUserRole(
+    @Param('id') id: string,
+    @Body('role') role: string,
+  ): Observable<any> {
+    return this.usrService.updateUserRole(Number(id), role);
   }
 }

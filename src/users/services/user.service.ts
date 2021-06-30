@@ -25,10 +25,11 @@ export class UserService {
         newUser.email = user.email;
         newUser.username = user.username;
         newUser.password = hashedPwd;
+        newUser.role = user.role;
 
         // const newUser = {...user, password: hashedPwd }
         return from(this.userRepository.save(newUser)).pipe(
-          map((user: User) => {
+          map((user: any) => {
             const { password, ...rest } = user;
             return rest;
           }),
@@ -38,30 +39,11 @@ export class UserService {
     );
   }
 
-  // async create(user: User) {
-  //   const { password, username } = user;
-  //   try {
-  //     const existingUser = this.findByUsername(username);
-  //     // if (existingUser) {
-  //     //   throw new Error('Username already in use');
-  //     // }
-  //     const hashedPwd = await bcrypt.hash(password, 10);
-  //     user.password = hashedPwd;
-  //     console.log('user is', user);
-  //     return await this.userRepository.save(user);
-  //   } catch (error) {
-  //     // console.log('error', error);
-  //     // console.log('error.message', error.message);
-  //     // return res.status(400).json({ error: error.message });
-  //     throw new Error(error.message);
-  //   }
-  // }
-
-  findByUsername(username: string): Observable<User> {
+  findByUsername(username: string): Observable<any> {
     return from(this.userRepository.findOne({ username }));
   }
 
-  findByEmail(email: string): Observable<User> {
+  findByEmail(email: string): Observable<any> {
     return from(this.userRepository.findOne({ email }));
   }
 
@@ -69,7 +51,7 @@ export class UserService {
     // Creates an Observable from an Array, an array-like object, a Promise, an iterable object, or an Observable-like object
     // https://rxjs-dev.firebaseapp.com/api/index/function/from
     return from(this.userRepository.find()).pipe(
-      map((users: Array<User>) => {
+      map((users: Array<any>) => {
         users.forEach((u) => {
           delete u.password;
         });
@@ -80,7 +62,7 @@ export class UserService {
 
   profile(id: number): Observable<any> {
     return from(this.userRepository.findOne(id)).pipe(
-      map((user: User) => {
+      map((user: any) => {
         const { password, ...rest } = user;
         return rest;
       }),
@@ -99,13 +81,21 @@ export class UserService {
   }
 
   login(user: User): Observable<string> {
-    return this.validateUser(user.email, user.password).pipe(switchMap((user: User)=> {
-      if(user) {
-        return this.authService.generateJWT(user).pipe(map((jwt: string)=> jwt))
-      } else {
-        return 'Wrong Credientials'
-      }
-    }))
+    return this.validateUser(user.email, user.password).pipe(
+      switchMap((user: User) => {
+        if (user) {
+          return this.authService
+            .generateJWT(user)
+            .pipe(map((jwt: string) => jwt));
+        } else {
+          return 'Wrong Credientials';
+        }
+      }),
+    );
+  }
+
+  updateUserRole(id: number, role: any): Observable<any> {
+    return from(this.userRepository.update(id, { role: role }));
   }
 
   validateUser(email: string, password: string): Observable<any> {
